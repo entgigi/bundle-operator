@@ -1,0 +1,6 @@
+apiVersion: bundle.entando.org/v1alpha1
+kind: EntandoBundleV2
+metadata:
+  name: entandobundlev2-sample
+spec:
+  # TODO(user): Add fields here
