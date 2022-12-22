@@ -37,17 +37,12 @@ spec:
             description: EntandoBundleInstanceV2Spec defines the desired state of
               EntandoBundleInstanceV2
             properties:
-              components:
-                items:
-                  type: string
-                type: array
               configuration:
                 type: string
-              dependencies:
-                items:
-                  type: string
-                type: array
               desiredStatus:
+                description: FIXME vanno inserite in annotations Dependencies  []string
+                  `json:"dependencies,omitempty"` FIXME vanno inserite in annotations
+                  Components    []string `json:"components,omitempty"`
                 type: string
               digest:
                 type: string

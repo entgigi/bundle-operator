@@ -11,6 +11,20 @@ import (
 )
 
 const (
+	// BundleInstance CR condition
+	CONDITION_PLUGIN_CR_APPLIED        = "PluginCrApplied"
+	CONDITION_PLUGIN_CR_APPLIED_REASON = "PluginCrIsApplied"
+	CONDITION_PLUGIN_CR_APPLIED_MSG    = "Your Plugin cr was applied"
+
+	CONDITION_PLUGIN_CR_READY        = "PluginCrReady"
+	CONDITION_PLUGIN_CR_READY_REASON = "PluginCrIsReady"
+	CONDITION_PLUGIN_CR_READY_MSG    = "Your Plugin cr is ready"
+
+	CONDITION_INSTANCE_READY        = "InstanceReady"
+	CONDITION_INSTANCE_READY_REASON = "InstanceIsReady"
+	CONDITION_INSTANCE_READY_MSG    = "Your Instance is ready"
+
+	// Bundle CR condition
 	CONDITION_INSTANCE_CR_APPLIED        = "InstanceCrApplied"
 	CONDITION_INSTANCE_CR_APPLIED_REASON = "InstanceCrIsApplied"
 	CONDITION_INSTANCE_CR_APPLIED_MSG    = "Your instance cr was applied"
@@ -28,6 +42,42 @@ func NewConditionService(base *common.BaseK8sStructure) *ConditionService {
 	return &ConditionService{
 		Base: base,
 	}
+}
+
+func (cs *ConditionService) IsPluginCrReady(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) bool {
+
+	condition, observedGeneration := cs.getConditionStatus(ctx, cr, CONDITION_PLUGIN_CR_READY)
+
+	return metav1.ConditionTrue == condition && observedGeneration == cr.Generation
+}
+
+func (cs *ConditionService) SetConditionPluginCrReady(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) error {
+
+	cs.deleteCondition(ctx, cr, CONDITION_PLUGIN_CR_READY)
+	return utility.AppendCondition(ctx, cs.Base.Client, cr,
+		CONDITION_PLUGIN_CR_READY,
+		metav1.ConditionTrue,
+		CONDITION_PLUGIN_CR_READY_REASON,
+		CONDITION_PLUGIN_CR_READY_MSG,
+		cr.Generation)
+}
+
+func (cs *ConditionService) IsPluginCrApplied(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) bool {
+
+	condition, observedGeneration := cs.getConditionStatus(ctx, cr, CONDITION_PLUGIN_CR_APPLIED)
+
+	return metav1.ConditionTrue == condition && observedGeneration == cr.Generation
+}
+
+func (cs *ConditionService) SetConditionPluginCrApplied(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) error {
+
+	cs.deleteCondition(ctx, cr, CONDITION_PLUGIN_CR_APPLIED)
+	return utility.AppendCondition(ctx, cs.Base.Client, cr,
+		CONDITION_PLUGIN_CR_APPLIED,
+		metav1.ConditionTrue,
+		CONDITION_PLUGIN_CR_APPLIED_REASON,
+		CONDITION_PLUGIN_CR_APPLIED_MSG,
+		cr.Generation)
 }
 
 func (cs *ConditionService) IsInstanceCrReady(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) bool {
@@ -66,19 +116,28 @@ func (cs *ConditionService) SetConditionInstanceCrApplied(ctx context.Context, c
 		cr.Generation)
 }
 
-/*
-func (cs *ConditionService) SetConditionPluginReadyTrue(ctx context.Context, cr *v1alpha1.EntandoPluginV2) error {
-	return cs.setConditionPluginReady(ctx, cr, metav1.ConditionTrue)
+func (cs *ConditionService) SetConditionInstanceReadyTrue(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) error {
+	return cs.setConditionInstanceReady(ctx, cr, metav1.ConditionTrue)
 }
 
-func (cs *ConditionService) SetConditionPluginReadyUnknow(ctx context.Context, cr *v1alpha1.EntandoPluginV2) error {
-	return cs.setConditionPluginReady(ctx, cr, metav1.ConditionUnknown)
+func (cs *ConditionService) SetConditionInstanceReadyUnknow(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) error {
+	return cs.setConditionInstanceReady(ctx, cr, metav1.ConditionUnknown)
 }
 
-func (cs *ConditionService) SetConditionPluginReadyFalse(ctx context.Context, cr *v1alpha1.EntandoPluginV2) error {
-	return cs.setConditionPluginReady(ctx, cr, metav1.ConditionFalse)
+func (cs *ConditionService) SetConditionInstanceReadyFalse(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) error {
+	return cs.setConditionInstanceReady(ctx, cr, metav1.ConditionFalse)
 }
-*/
+
+func (cs *ConditionService) setConditionInstanceReady(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2, status metav1.ConditionStatus) error {
+
+	cs.deleteCondition(ctx, cr, CONDITION_INSTANCE_READY)
+	return utility.AppendCondition(ctx, cs.Base.Client, cr,
+		CONDITION_INSTANCE_READY,
+		status,
+		CONDITION_INSTANCE_READY_REASON,
+		CONDITION_INSTANCE_READY_MSG,
+		cr.Generation)
+}
 
 func (cs *ConditionService) getConditionStatus(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2, typeName string) (metav1.ConditionStatus, int64) {
 

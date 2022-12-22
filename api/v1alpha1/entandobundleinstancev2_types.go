@@ -22,12 +22,12 @@ import (
 
 // EntandoBundleInstanceV2Spec defines the desired state of EntandoBundleInstanceV2
 type EntandoBundleInstanceV2Spec struct {
-	Tag           string   `json:"tag,omitempty"`
-	Digest        string   `json:"digest,omitempty"`
-	Dependencies  []string `json:"dependencies,omitempty"`
-	Components    []string `json:"components,omitempty"`
-	DesiredStatus string   `json:"desiredStatus,omitempty"`
-	Configuration string   `json:"configuration,omitempty"`
+	Tag    string `json:"tag,omitempty"`
+	Digest string `json:"digest,omitempty"`
+	// FIXME vanno inserite in annotations Dependencies  []string `json:"dependencies,omitempty"`
+	// FIXME vanno inserite in annotations Components    []string `json:"components,omitempty"`
+	DesiredStatus string `json:"desiredStatus,omitempty"`
+	Configuration string `json:"configuration,omitempty"`
 }
 
 // EntandoBundleInstanceV2Status defines the observed state of EntandoBundleInstanceV2
