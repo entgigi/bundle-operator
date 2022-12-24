@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/google/go-containerregistry/pkg/crane"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -12,7 +14,7 @@ import (
 
 func ExtractImageTo(repoSrc string, pathDir string) error {
 	pathTarFile := generateFileTarPath(pathDir)
-	f, err := os.Create(pathTarFile)
+	f, err := openFile(pathTarFile)
 	if err != nil {
 		return fmt.Errorf("failed to open %s: %w", pathTarFile, err)
 	}
@@ -33,22 +35,44 @@ func ExtractImageTo(repoSrc string, pathDir string) error {
 	}
 
 	// untar pathDir.tar
-	return extractTar(pathDir, f)
+	err = extractTar(pathDir, pathTarFile)
+	if err != nil {
+		return fmt.Errorf("failed to extract tar %s: %w", pathTarFile, err)
+	}
 
+	return os.Remove(pathTarFile)
 }
 
 func generateFileTarPath(pathDir string) string {
-
-	return pathDir + ".tar"
+	filePath := strings.TrimSuffix(pathDir, "/")
+	return filePath + ".tar"
 }
 
-func extractTar(pathDir string, tarFile *os.File) error {
+func openFile(path string) (*os.File, error) {
+	if _, err := os.Stat(path); err == nil {
+		if err = os.Remove(path); err != nil {
+			return nil, err
+		}
+	}
+	f, err := os.Create(path)
+	return f, err
+}
+
+func extractTar(pathDir string, pathTarFile string) error {
+	tarFile, err := os.Open(pathTarFile)
+	if err != nil {
+		return err
+	}
+	defer tarFile.Close()
+
 	var fileReader io.ReadCloser = tarFile
 	tarBallReader := tar.NewReader(fileReader)
+	fmt.Println("extractTar start")
 	for {
 		header, err := tarBallReader.Next()
 		if err != nil {
 			if err == io.EOF {
+				fmt.Println("extractTar EOF")
 				break
 			}
 			return err
@@ -56,12 +80,13 @@ func extractTar(pathDir string, tarFile *os.File) error {
 
 		// get the individual filename and extract to the current directory
 		filename := header.Name
+		target := filepath.Join(pathDir, filename)
 
 		switch header.Typeflag {
 		case tar.TypeDir:
 			// handle directory
-			fmt.Println("Creating directory :", filename)
-			err = os.MkdirAll(filename, os.FileMode(header.Mode)) // or use 0755 if you prefer
+			fmt.Println("Creating directory :", target)
+			err = os.MkdirAll(target, os.FileMode(header.Mode)) // or use 0755 if you prefer
 
 			if err != nil {
 				return err
@@ -69,8 +94,8 @@ func extractTar(pathDir string, tarFile *os.File) error {
 
 		case tar.TypeReg:
 			// handle normal file
-			fmt.Println("Untarring :", filename)
-			writer, err := os.Create(filename)
+			fmt.Println("Untarring :", target)
+			writer, err := os.Create(target)
 
 			if err != nil {
 				return err
@@ -78,7 +103,7 @@ func extractTar(pathDir string, tarFile *os.File) error {
 
 			io.Copy(writer, tarBallReader)
 
-			err = os.Chmod(filename, os.FileMode(header.Mode))
+			err = os.Chmod(target, os.FileMode(header.Mode))
 
 			if err != nil {
 				return err
@@ -86,7 +111,7 @@ func extractTar(pathDir string, tarFile *os.File) error {
 
 			writer.Close()
 		default:
-			fmt.Printf("Unable to untar type : %c in file %s", header.Typeflag, filename)
+			fmt.Printf("Unable to untar type : %c in file %s", header.Typeflag, target)
 		}
 	}
 	return nil

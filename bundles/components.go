@@ -2,6 +2,7 @@ package bundles
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"gopkg.in/yaml.v3"
 )
@@ -63,4 +64,25 @@ func (s *Component) UnmarshalYAML(n *yaml.Node) error {
 		panic(fmt.Sprintf("kind unknown %s", s.Type))
 	}
 	return obj.Spec.Decode(s.Spec)
+}
+
+func (s *Component) GetIfIsPlugin() (bool, *Plugin) {
+	plugin, isPlugin := s.Spec.(*Plugin)
+	return isPlugin, plugin
+}
+
+func (s *Component) GetIfIsManifest() (bool, *Manifest) {
+	manifest, isManifest := s.Spec.(*Manifest)
+	return isManifest, manifest
+}
+
+func ReadBundleDescriptor(fileDescriptorPath string) (*BundleDescriptor, error) {
+	yfile, err := ioutil.ReadFile(fileDescriptorPath)
+	if err != nil {
+		return nil, err
+	}
+
+	data := &BundleDescriptor{}
+	err = yaml.Unmarshal(yfile, &data)
+	return data, err
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/entgigi/bundle-operator/api/v1alpha1"
+	"github.com/entgigi/bundle-operator/bundles"
 	"github.com/entgigi/bundle-operator/common"
 	"github.com/entgigi/bundle-operator/controllers/services"
 	"github.com/go-logr/logr"
@@ -35,6 +36,7 @@ func NewReconcileInstanceManager(client client.Client, log logr.Logger, scheme *
 func (r *ReconcileInstanceManager) MainReconcile(ctx context.Context, req ctrl.Request, cr *v1alpha1.EntandoBundleInstanceV2) (ctrl.Result, error) {
 
 	log := r.Base.Log
+	bundleService := services.NewBundleService()
 	pluginManager := NewPluginManager(r.Base, r.Condition)
 
 	if err := r.Condition.SetConditionInstanceReadyUnknow(ctx, cr); err != nil {
@@ -45,9 +47,15 @@ func (r *ReconcileInstanceManager) MainReconcile(ctx context.Context, req ctrl.R
 	// verify signature
 
 	// retrieve components
+	components, err := bundleService.GetComponents(ctx, cr)
+	if err != nil {
+		log.Info("error retrieve components", "error", err)
+		r.Condition.SetConditionInstanceReadyFalse(ctx, cr)
+		return ctrl.Result{}, err
+	}
 
-	// manage components (plugin and manifests)
-	if doNext, res, err := r.managePlugins(ctx, req, cr, pluginManager); !doNext {
+	// manage components (plugins and manifests)
+	if doNext, res, err := r.managePlugins(ctx, req, cr, pluginManager, components); !doNext {
 		return res, err
 	}
 
@@ -55,8 +63,38 @@ func (r *ReconcileInstanceManager) MainReconcile(ctx context.Context, req ctrl.R
 	return ctrl.Result{}, nil
 }
 
-func (r *ReconcileInstanceManager) managePlugins(ctx context.Context, req ctrl.Request, cr *v1alpha1.EntandoBundleInstanceV2, pluginManager *PluginManager) (bool, ctrl.Result, error) {
+func (r *ReconcileInstanceManager) managePlugins(ctx context.Context, req ctrl.Request, cr *v1alpha1.EntandoBundleInstanceV2,
+	pluginManager *PluginManager,
+	components []bundles.Component) (bool, ctrl.Result, error) {
+
+	for _, component := range components {
+		isPlugin, plugin := component.GetIfIsPlugin()
+		if isPlugin {
+			doNext, res, err := r.managePlugin(ctx, req, cr, pluginManager, plugin)
+			if !doNext {
+				return doNext, res, err
+			}
+			continue
+		}
+		isManifest, manifest := component.GetIfIsManifest()
+		if isManifest {
+			doNext, res, err := r.manageManifest(ctx, req, cr, manifest)
+			if !doNext {
+				return doNext, res, err
+			}
+			continue
+		}
+	}
+
+	return true, ctrl.Result{}, nil
+}
+
+func (r *ReconcileInstanceManager) managePlugin(ctx context.Context, req ctrl.Request,
+	cr *v1alpha1.EntandoBundleInstanceV2,
+	pluginManager *PluginManager,
+	plugin *bundles.Plugin) (bool, ctrl.Result, error) {
 	log := r.Base.Log
+
 	// plugin done
 	applied := pluginManager.IsPluginApplied(ctx, cr)
 
@@ -86,6 +124,13 @@ func (r *ReconcileInstanceManager) managePlugins(ctx context.Context, req ctrl.R
 			return false, ctrl.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
 		}
 	}
+
+	return true, ctrl.Result{}, nil
+}
+
+func (r *ReconcileInstanceManager) manageManifest(ctx context.Context, req ctrl.Request,
+	cr *v1alpha1.EntandoBundleInstanceV2,
+	manifest *bundles.Manifest) (bool, ctrl.Result, error) {
 
 	return true, ctrl.Result{}, nil
 }

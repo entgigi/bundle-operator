@@ -22,8 +22,9 @@ import (
 
 // EntandoBundleInstanceV2Spec defines the desired state of EntandoBundleInstanceV2
 type EntandoBundleInstanceV2Spec struct {
-	Tag    string `json:"tag,omitempty"`
-	Digest string `json:"digest,omitempty"`
+	Tag        string `json:"tag,omitempty"`
+	Digest     string `json:"digest,omitempty"`
+	Repository string `json:"repository,omitempty"`
 	// FIXME vanno inserite in annotations Dependencies  []string `json:"dependencies,omitempty"`
 	// FIXME vanno inserite in annotations Components    []string `json:"components,omitempty"`
 	DesiredStatus string `json:"desiredStatus,omitempty"`
