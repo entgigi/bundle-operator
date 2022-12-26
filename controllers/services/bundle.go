@@ -20,7 +20,7 @@ func (bs *BundleService) CheckBundleSignature(ctx context.Context, cr *v1alpha1.
 	return nil
 }
 
-func (bs *BundleService) GetComponents(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) ([]bundles.Component, error) {
+func (bs *BundleService) GetComponents(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) ([]bundles.Component, string, error) {
 	/*
 		repository := "docker.io/gigiozzz/bundle-test-op"
 		concat := "@"
@@ -28,19 +28,19 @@ func (bs *BundleService) GetComponents(ctx context.Context, cr *v1alpha1.Entando
 	*/
 	dir, err := ioutil.TempDir("/tmp", "crane-"+cr.Spec.Digest)
 	if err != nil {
-		return nil, err
+		return nil, dir, err
 	}
 
 	err = bundles.ExtractImageTo(cr.Spec.Repository+"@"+cr.Spec.Digest, dir)
 	if err != nil {
-		return nil, err
+		return nil, dir, err
 	}
 
 	bundleDescriptor, err := bundles.ReadBundleDescriptor(dir + "/descriptor.yaml")
 	if err != nil {
-		return nil, err
+		return nil, dir, err
 	}
 
-	return bundleDescriptor.Components, nil
+	return bundleDescriptor.Components, dir, nil
 
 }

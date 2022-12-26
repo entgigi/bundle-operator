@@ -12,6 +12,10 @@ import (
 
 const (
 	// BundleInstance CR condition
+	CONDITION_MANIFEST_APPLIED        = "ManifestApplied"
+	CONDITION_MANIFEST_APPLIED_REASON = "ManifestIsApplied"
+	CONDITION_MANIFEST_APPLIED_MSG    = "Your Manifest was applied"
+
 	CONDITION_PLUGIN_CR_APPLIED        = "PluginCrApplied"
 	CONDITION_PLUGIN_CR_APPLIED_REASON = "PluginCrIsApplied"
 	CONDITION_PLUGIN_CR_APPLIED_MSG    = "Your Plugin cr was applied"
@@ -59,6 +63,24 @@ func (cs *ConditionService) SetConditionPluginCrReady(ctx context.Context, cr *v
 		metav1.ConditionTrue,
 		CONDITION_PLUGIN_CR_READY_REASON,
 		CONDITION_PLUGIN_CR_READY_MSG,
+		cr.Generation)
+}
+
+func (cs *ConditionService) IsManifestApplied(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2, manifestId string) bool {
+
+	condition, observedGeneration := cs.getConditionStatus(ctx, cr, CONDITION_MANIFEST_APPLIED+"-"+manifestId)
+
+	return metav1.ConditionTrue == condition && observedGeneration == cr.Generation
+}
+
+func (cs *ConditionService) SetConditionManifestApplied(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2, manifestId string) error {
+
+	cs.deleteCondition(ctx, cr, CONDITION_MANIFEST_APPLIED+"-"+manifestId)
+	return utility.AppendCondition(ctx, cs.Base.Client, cr,
+		CONDITION_MANIFEST_APPLIED+"-"+manifestId,
+		metav1.ConditionTrue,
+		CONDITION_MANIFEST_APPLIED_REASON,
+		CONDITION_MANIFEST_APPLIED_MSG,
 		cr.Generation)
 }
 
