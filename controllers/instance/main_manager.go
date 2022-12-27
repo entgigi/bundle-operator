@@ -98,10 +98,10 @@ func (r *ReconcileInstanceManager) managePlugin(ctx context.Context, req ctrl.Re
 	pluginManager := NewPluginManager(r.Base, r.Condition)
 
 	// plugin done
-	applied := pluginManager.IsPluginApplied(ctx, cr)
+	applied := pluginManager.IsPluginApplied(ctx, cr, plugin)
 
 	if !applied {
-		if err := pluginManager.ApplyPlugin(ctx, cr, r.Scheme); err != nil {
+		if err := pluginManager.ApplyPlugin(ctx, cr, plugin, r.Scheme); err != nil {
 			log.Info("error ApplyPlugin reschedule reconcile", "error", err)
 			r.Condition.SetConditionInstanceReadyFalse(ctx, cr)
 			return false, ctrl.Result{}, err

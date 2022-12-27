@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/entgigi/bundle-operator/api/v1alpha1"
+	"github.com/entgigi/bundle-operator/bundles"
 	"github.com/entgigi/bundle-operator/common"
 	"github.com/entgigi/bundle-operator/controllers/services"
 	"github.com/entgigi/bundle-operator/utility"
@@ -30,9 +31,10 @@ func NewPluginManager(base *common.BaseK8sStructure, conditions *services.Condit
 	}
 }
 
-func (d *PluginManager) IsPluginApplied(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) bool {
+func (d *PluginManager) IsPluginApplied(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2,
+	plugin *bundles.Plugin) bool {
 
-	return d.Conditions.IsPluginCrApplied(ctx, cr, d.GenPluginCode(cr))
+	return d.Conditions.IsPluginCrApplied(ctx, cr, d.GenPluginCode(cr, plugin))
 }
 
 func (d *PluginManager) IsPluginReady(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) bool {
@@ -40,12 +42,13 @@ func (d *PluginManager) IsPluginReady(ctx context.Context, cr *v1alpha1.EntandoB
 	return d.Conditions.IsPluginCrReady(ctx, cr)
 }
 
-func (d *PluginManager) ApplyPlugin(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2, scheme *runtime.Scheme) error {
+func (d *PluginManager) ApplyPlugin(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2, plugin *bundles.Plugin,
+	scheme *runtime.Scheme) error {
 
-	basePluginCr := d.buildPluginCr(cr, scheme)
+	basePluginCr := d.buildPluginCr(cr, plugin, scheme)
 	pluginCr := &pluginapi.EntandoPluginV2{}
 
-	err, isUpgrade := d.isCrUpgrade(ctx, cr, pluginCr)
+	err, isUpgrade := d.isCrUpgrade(ctx, cr, pluginCr, plugin)
 	if err != nil {
 		return err
 	}
@@ -63,7 +66,7 @@ func (d *PluginManager) ApplyPlugin(ctx context.Context, cr *v1alpha1.EntandoBun
 		return applyError
 	}
 
-	return d.Conditions.SetConditionPluginCrApplied(ctx, cr, d.GenPluginCode(cr))
+	return d.Conditions.SetConditionPluginCrApplied(ctx, cr, d.GenPluginCode(cr, plugin))
 }
 
 func (d *PluginManager) CheckPluginCr(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) (bool, error) {
@@ -78,28 +81,30 @@ func (d *PluginManager) CheckPluginCr(ctx context.Context, cr *v1alpha1.EntandoB
 
 }
 
-func (d *PluginManager) isCrUpgrade(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2, pluginCr *pluginapi.EntandoPluginV2) (error, bool) {
-	err := d.Base.Client.Get(ctx, types.NamespacedName{Name: d.GenPluginCode(cr), Namespace: cr.GetNamespace()}, pluginCr)
+func (d *PluginManager) isCrUpgrade(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2,
+	pluginCr *pluginapi.EntandoPluginV2,
+	plugin *bundles.Plugin) (error, bool) {
+	err := d.Base.Client.Get(ctx, types.NamespacedName{Name: d.GenPluginCode(cr, plugin), Namespace: cr.GetNamespace()}, pluginCr)
 	if errors.IsNotFound(err) {
 		return nil, false
 	}
 	return err, true
 }
 
-func (d *PluginManager) GenPluginId(cr *v1alpha1.EntandoBundleInstanceV2) string {
-	pluginFullRepo := cr.Spec.Repository + "@" + cr.Spec.Digest
+func (d *PluginManager) GenPluginId(plugin *bundles.Plugin) string {
+	pluginFullRepo := plugin.Repository + "@" + plugin.Digest
 	s := utility.GenerateSha256(pluginFullRepo)
 	return utility.TruncateString(s, 8)
 }
 
-func (d *PluginManager) GenPluginCode(cr *v1alpha1.EntandoBundleInstanceV2) string {
-	pluginId := d.GenPluginId(cr)
+func (d *PluginManager) GenPluginCode(cr *v1alpha1.EntandoBundleInstanceV2, plugin *bundles.Plugin) string {
+	pluginId := d.GenPluginId(plugin)
 	pluginCode := utility.TruncateString("pn-"+pluginId+"-"+cr.Name, 220)
 	return pluginCode
 }
 
-func (d *PluginManager) buildPluginCr(cr *v1alpha1.EntandoBundleInstanceV2, scheme *runtime.Scheme) *pluginapi.EntandoPluginV2 {
-	pluginCode := d.GenPluginCode(cr)
+func (d *PluginManager) buildPluginCr(cr *v1alpha1.EntandoBundleInstanceV2, plugin *bundles.Plugin, scheme *runtime.Scheme) *pluginapi.EntandoPluginV2 {
+	pluginCode := d.GenPluginCode(cr, plugin)
 	pluginCr := &pluginapi.EntandoPluginV2{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pluginCode,
