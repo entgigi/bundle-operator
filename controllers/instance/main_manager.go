@@ -139,12 +139,12 @@ func (r *ReconcileInstanceManager) manageManifest(ctx context.Context, req ctrl.
 	log := r.Base.Log
 	log.Info("======== manage manifest ========", "manifest", manifest)
 	manifestManager := NewManifestManager(r.Base, r.Condition)
-	manifestFullPath := dir + manifest.FilePath
+
 	// plugin done
-	applied := manifestManager.IsManifestApplied(ctx, cr, manifestFullPath)
+	applied := manifestManager.IsManifestApplied(ctx, cr, manifest.FilePath)
 
 	if !applied {
-		if err := manifestManager.ApplyManifest(ctx, cr, r.Scheme, manifestFullPath); err != nil {
+		if err := manifestManager.ApplyManifest(ctx, cr, r.Scheme, dir, manifest.FilePath); err != nil {
 			log.Info("error ApplyManifest reschedule reconcile", "error", err)
 			r.Condition.SetConditionInstanceReadyFalse(ctx, cr)
 			return false, ctrl.Result{}, err

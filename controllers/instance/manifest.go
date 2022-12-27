@@ -4,6 +4,8 @@ import (
 	"context"
 	"io/ioutil"
 
+	"path/filepath"
+
 	"github.com/entgigi/bundle-operator/api/v1alpha1"
 	"github.com/entgigi/bundle-operator/controllers/applyer"
 	"github.com/entgigi/bundle-operator/utility"
@@ -13,6 +15,8 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 )
 
 type Manifest struct {
@@ -28,15 +32,30 @@ func NewManifest(base *common.BaseK8sStructure) *Manifest {
 func (d *Manifest) ApplyManifest(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2,
 	scheme *runtime.Scheme,
 	manifestPath string) error {
-
+	log := d.Base.Log
 	// read yaml
 	yfile, err := ioutil.ReadFile(manifestPath)
 	if err != nil {
 		return err
 	}
-	config, err := rest.InClusterConfig()
+	var config *rest.Config
+	config, err = rest.InClusterConfig()
 	if err != nil {
-		return err
+		if err == rest.ErrNotInCluster {
+			var kubeconfig string
+			if home := homedir.HomeDir(); home != "" {
+				kubeconfig = filepath.Join(home, ".kube", "config")
+			}
+
+			var internalError error
+			config, internalError = clientcmd.BuildConfigFromFlags("", kubeconfig)
+			if internalError != nil {
+				return err
+			}
+			log.Info("Use kube config")
+		}
+	} else {
+		log.Info("Use incluster config")
 	}
 
 	dynamicClient, err := dynamic.NewForConfig(config)
