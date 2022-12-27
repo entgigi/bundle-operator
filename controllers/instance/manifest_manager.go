@@ -1,0 +1,50 @@
+package instance
+
+import (
+	"context"
+
+	"github.com/entgigi/bundle-operator/api/v1alpha1"
+	"github.com/entgigi/bundle-operator/utility"
+
+	"github.com/entgigi/bundle-operator/common"
+	"github.com/entgigi/bundle-operator/controllers/services"
+
+	runtime "k8s.io/apimachinery/pkg/runtime"
+)
+
+type ManifestManager struct {
+	Base       *common.BaseK8sStructure
+	Conditions *services.ConditionService
+}
+
+func NewManifestManager(base *common.BaseK8sStructure, conditions *services.ConditionService) *ManifestManager {
+	return &ManifestManager{
+		Base:       base,
+		Conditions: conditions,
+	}
+}
+
+func (d *ManifestManager) IsManifestApplied(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2, manifestPath string) bool {
+	manifestId := genManifestId(manifestPath)
+	return d.Conditions.IsManifestApplied(ctx, cr, manifestId)
+}
+
+func (d *ManifestManager) ApplyManifest(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2,
+	scheme *runtime.Scheme,
+	manifestPath string) error {
+
+	manifestService := NewManifest(d.Base)
+
+	err := manifestService.ApplyManifest(ctx, cr, scheme, manifestPath)
+	if err != nil {
+		return err
+	}
+	manifestId := genManifestId(manifestPath)
+
+	return d.Conditions.SetConditionManifestApplied(ctx, cr, manifestId, manifestPath)
+}
+
+func genManifestId(manifestPath string) string {
+	s := utility.GenerateSha256(manifestPath)
+	return utility.TruncateString(s, 8)
+}

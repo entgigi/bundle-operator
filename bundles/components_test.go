@@ -57,7 +57,7 @@ func TestUnmarshalling(t *testing.T) {
 		t.Fatalf("Invalid Domain for %q. Actual type is plugin %t, got %q", data, actualTypeIsPlugin2, mytype2)
 	}
 
-	expectedRepository := "nginx"
+	expectedRepository := "docker.io/nginx"
 	actualRepository := plugin.Repository
 	if actualRepository != expectedRepository {
 		t.Fatalf("Invalid Domain for %q. Expected %q, got %q", data, expectedRepository, actualRepository)

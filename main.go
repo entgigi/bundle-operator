@@ -37,6 +37,7 @@ import (
 	"github.com/entgigi/bundle-operator/controllers/bundle"
 	"github.com/entgigi/bundle-operator/controllers/instance"
 	"github.com/entgigi/bundle-operator/utility"
+	pluginv1alpha1 "github.com/entgigi/plugin-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -47,6 +48,8 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+
+	utilruntime.Must(pluginv1alpha1.AddToScheme(scheme))
 
 	utilruntime.Must(bundlev1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme

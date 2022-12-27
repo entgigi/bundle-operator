@@ -73,29 +73,30 @@ func (cs *ConditionService) IsManifestApplied(ctx context.Context, cr *v1alpha1.
 	return metav1.ConditionTrue == condition && observedGeneration == cr.Generation
 }
 
-func (cs *ConditionService) SetConditionManifestApplied(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2, manifestId string) error {
+func (cs *ConditionService) SetConditionManifestApplied(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2,
+	manifestId string, manifestPath string) error {
 
 	cs.deleteCondition(ctx, cr, CONDITION_MANIFEST_APPLIED+"-"+manifestId)
 	return utility.AppendCondition(ctx, cs.Base.Client, cr,
 		CONDITION_MANIFEST_APPLIED+"-"+manifestId,
 		metav1.ConditionTrue,
 		CONDITION_MANIFEST_APPLIED_REASON,
-		CONDITION_MANIFEST_APPLIED_MSG,
+		CONDITION_MANIFEST_APPLIED_MSG+" "+manifestPath,
 		cr.Generation)
 }
 
-func (cs *ConditionService) IsPluginCrApplied(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) bool {
+func (cs *ConditionService) IsPluginCrApplied(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2, pluginCode string) bool {
 
-	condition, observedGeneration := cs.getConditionStatus(ctx, cr, CONDITION_PLUGIN_CR_APPLIED)
+	condition, observedGeneration := cs.getConditionStatus(ctx, cr, CONDITION_PLUGIN_CR_APPLIED+"-"+pluginCode)
 
 	return metav1.ConditionTrue == condition && observedGeneration == cr.Generation
 }
 
-func (cs *ConditionService) SetConditionPluginCrApplied(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) error {
+func (cs *ConditionService) SetConditionPluginCrApplied(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2, pluginCode string) error {
 
-	cs.deleteCondition(ctx, cr, CONDITION_PLUGIN_CR_APPLIED)
+	cs.deleteCondition(ctx, cr, CONDITION_PLUGIN_CR_APPLIED+"-"+pluginCode)
 	return utility.AppendCondition(ctx, cs.Base.Client, cr,
-		CONDITION_PLUGIN_CR_APPLIED,
+		CONDITION_PLUGIN_CR_APPLIED+"-"+pluginCode,
 		metav1.ConditionTrue,
 		CONDITION_PLUGIN_CR_APPLIED_REASON,
 		CONDITION_PLUGIN_CR_APPLIED_MSG,

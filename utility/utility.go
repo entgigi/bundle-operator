@@ -1,6 +1,7 @@
 package utility
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"os"
 
@@ -35,4 +36,11 @@ func TruncateString(s string, max int) string {
 		return s
 	}
 	return s[:max]
+}
+
+func GenerateSha256(s string) string {
+	h := sha256.New()
+	h.Write([]byte(s))
+	return string(h.Sum(nil))
+
 }
