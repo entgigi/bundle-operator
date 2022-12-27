@@ -26,7 +26,7 @@ func (bs *BundleService) GetComponents(ctx context.Context, cr *v1alpha1.Entando
 		concat := "@"
 		digest := "sha256:70ba938d4e11f219fc9dc0424e3e55173419a1da51598b341bb2162ea088a8a4"
 	*/
-	dir, err := ioutil.TempDir("/tmp", "crane-"+cr.Spec.Digest)
+	dir, err := ioutil.TempDir("/tmp", "crane-"+cr.Spec.Digest+"-")
 	if err != nil {
 		return nil, dir, err
 	}

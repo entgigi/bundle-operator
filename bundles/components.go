@@ -21,26 +21,26 @@ type Component struct {
 }
 
 type Plugin struct {
-	Repository      string `json:"repository,omitempty"`
-	Tag             string `json:"tag,omitempty"`
-	Digest          string `json:"digest,omitempty"`
-	HealthCheckPath string `json:"healthCheckPath,omitempty"`
-	Port            int    `json:"port,omitempty"`
-	IngressName     string `json:"ingressName,omitempty"`
-	IngressHost     string `json:"ingressHost,omitempty"`
-	IngressPath     string `json:"ingressPath,omitempty"`
+	IngressName     string `yaml:"ingressName,omitempty"`
+	IngressHost     string `yaml:"ingressHost,omitempty"`
+	IngressPath     string `yaml:"ingressPath,omitempty"`
+	Repository      string `yaml:"repository,omitempty"`
+	Tag             string `yaml:"tag,omitempty"`
+	Digest          string `yaml:"digest,omitempty"`
+	HealthCheckPath string `yaml:"healthCheckPath,omitempty"`
+	Port            int    `yaml:"port,omitempty"`
 }
 
 type Manifest struct {
-	FilePath string `json:"filePath,omitempty"`
+	FilePath string `yaml:"filePath,omitempty"`
 }
 
 type BundleDescriptor struct {
-	Version      string      `json:"version"`
-	Name         string      `json:"name"`
-	Descriptor   string      `json:"descriptor"`
-	Dependencies []string    `json:"dependencies"`
-	Components   []Component `json:"components"`
+	Version      string      `yaml:"version"`
+	Name         string      `yaml:"name"`
+	Descriptor   string      `yaml:"descriptor"`
+	Dependencies []string    `yaml:"dependencies"`
+	Components   []Component `yaml:"components"`
 }
 
 func (s *Component) UnmarshalYAML(n *yaml.Node) error {

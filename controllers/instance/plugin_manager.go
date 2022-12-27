@@ -2,6 +2,8 @@ package instance
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/entgigi/bundle-operator/api/v1alpha1"
@@ -99,7 +101,8 @@ func (d *PluginManager) GenPluginId(plugin *bundles.Plugin) string {
 
 func (d *PluginManager) GenPluginCode(cr *v1alpha1.EntandoBundleInstanceV2, plugin *bundles.Plugin) string {
 	pluginId := d.GenPluginId(plugin)
-	pluginCode := utility.TruncateString("pn-"+pluginId+"-"+cr.Name, 220)
+	pluginCode := strings.ToLower(utility.TruncateString("pn-"+pluginId+"-"+cr.Name, 220))
+	fmt.Println("pluginCode: " + pluginCode)
 	return pluginCode
 }
 

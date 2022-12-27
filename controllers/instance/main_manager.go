@@ -67,8 +67,10 @@ func (r *ReconcileInstanceManager) MainReconcile(ctx context.Context, req ctrl.R
 func (r *ReconcileInstanceManager) manageComponents(ctx context.Context, req ctrl.Request,
 	cr *v1alpha1.EntandoBundleInstanceV2,
 	components []bundles.Component, dir string) (bool, ctrl.Result, error) {
+	log := r.Base.Log
 
 	for _, component := range components {
+		log.Info("== component ==", "component", component)
 		isPlugin, plugin := component.GetIfIsPlugin()
 		if isPlugin {
 			doNext, res, err := r.managePlugin(ctx, req, cr, plugin)
@@ -135,6 +137,7 @@ func (r *ReconcileInstanceManager) manageManifest(ctx context.Context, req ctrl.
 	manifest *bundles.Manifest,
 	dir string) (bool, ctrl.Result, error) {
 	log := r.Base.Log
+	log.Info("======== manage manifest ========", "manifest", manifest)
 	manifestManager := NewManifestManager(r.Base, r.Condition)
 	manifestFullPath := dir + manifest.FilePath
 	// plugin done

@@ -10,7 +10,10 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/crane"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
+
+var bundleLog = ctrl.Log.WithName("bundles")
 
 func ExtractImageTo(repoSrc string, pathDir string) error {
 	pathTarFile := generateFileTarPath(pathDir)
@@ -85,7 +88,7 @@ func extractTar(pathDir string, pathTarFile string) error {
 		switch header.Typeflag {
 		case tar.TypeDir:
 			// handle directory
-			fmt.Println("Creating directory :", target)
+			bundleLog.Info(fmt.Sprintf("Creating directory : %s", target))
 			err = os.MkdirAll(target, os.FileMode(header.Mode)) // or use 0755 if you prefer
 
 			if err != nil {
@@ -94,7 +97,7 @@ func extractTar(pathDir string, pathTarFile string) error {
 
 		case tar.TypeReg:
 			// handle normal file
-			fmt.Println("Untarring :", target)
+			bundleLog.Info(fmt.Sprintf("Untarring : %s", target))
 			writer, err := os.Create(target)
 
 			if err != nil {
@@ -111,7 +114,7 @@ func extractTar(pathDir string, pathTarFile string) error {
 
 			writer.Close()
 		default:
-			fmt.Printf("Unable to untar type : %c in file %s", header.Typeflag, target)
+			bundleLog.Info(fmt.Sprintf("Unable to untar type : %c in file %s", header.Typeflag, target))
 		}
 	}
 	return nil

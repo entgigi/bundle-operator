@@ -21,6 +21,7 @@ func TestUnmarshalling(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
+
 	data := &BundleDescriptor{}
 	err = yaml.Unmarshal(yfile, &data)
 	if err != nil {
@@ -48,19 +49,25 @@ func TestUnmarshalling(t *testing.T) {
 	plugin, actualTypeIsPlugin := data.Components[0].Spec.(*Plugin)
 	fmt.Println(reflect.TypeOf(data.Components[0].Spec))
 	if !actualTypeIsPlugin {
-		t.Fatalf("Invalid Domain for %q. Actual type is plugin %t, got %q", data, actualTypeIsPlugin, plugin)
+		t.Fatalf("Invalid type for %q. Actual type is plugin %t, got %q", data, actualTypeIsPlugin, plugin)
 	}
 
-	mytype2, actualTypeIsPlugin2 := data.Components[1].Spec.(*Manifest)
+	manifest, actualTypeIsPlugin2 := data.Components[1].Spec.(*Manifest)
 	fmt.Println(reflect.TypeOf(data.Components[1].Spec))
 	if !actualTypeIsPlugin2 {
-		t.Fatalf("Invalid Domain for %q. Actual type is plugin %t, got %q", data, actualTypeIsPlugin2, mytype2)
+		t.Fatalf("Invalid type for %q. Actual type is plugin %t, got %q", data, actualTypeIsPlugin2, manifest)
 	}
 
 	expectedRepository := "docker.io/nginx"
 	actualRepository := plugin.Repository
 	if actualRepository != expectedRepository {
-		t.Fatalf("Invalid Domain for %q. Expected %q, got %q", data, expectedRepository, actualRepository)
+		t.Fatalf("Invalid repo for %q. Expected %q, got %q", data, expectedRepository, actualRepository)
+	}
+
+	expectedFilePath := "/manifests/db-service.yaml"
+	actualFilePath := manifest.FilePath
+	if actualFilePath != expectedFilePath {
+		t.Fatalf("Invalid filePath for %q. Expected %q, got %q", data, expectedFilePath, actualFilePath)
 	}
 
 }
