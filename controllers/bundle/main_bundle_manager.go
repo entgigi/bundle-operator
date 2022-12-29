@@ -61,8 +61,9 @@ func (r *ReconcileBundleManager) MainReconcile(ctx context.Context, req ctrl.Req
 func (r *ReconcileBundleManager) generateAndSaveBundleCode(ctx context.Context,
 	cr *v1alpha1.EntandoBundleV2,
 	bundleService *services.BundleService) error {
-
+	r.Base.Log.Info("generate code for bundle from repo: " + cr.Spec.Repository)
 	bundleCode := bundleService.GenerateBundleCode(cr)
+	r.Base.Log.Info("generated bundle code: " + bundleCode)
 
 	annotations := cr.GetAnnotations()
 	annotations["bundleCode"] = bundleCode

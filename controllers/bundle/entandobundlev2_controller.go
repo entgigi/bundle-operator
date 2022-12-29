@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	bundlev1alpha1 "github.com/entgigi/bundle-operator/api/v1alpha1"
 )
@@ -93,6 +94,7 @@ func (r *EntandoBundleV2Reconciler) Reconcile(ctx context.Context, req ctrl.Requ
 func (r *EntandoBundleV2Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&bundlev1alpha1.EntandoBundleV2{}).
+		WithEventFilter(predicate.GenerationChangedPredicate{}). //solo modifiche a spec
 		Complete(r)
 }
 

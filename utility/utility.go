@@ -2,7 +2,6 @@ package utility
 
 import (
 	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
 	"os"
 
@@ -40,8 +39,6 @@ func TruncateString(s string, max int) string {
 }
 
 func GenerateSha256(s string) string {
-	h := sha256.New()
-	h.Write([]byte(s))
-	return base64.URLEncoding.EncodeToString(h.Sum(nil))
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(s)))
 
 }
