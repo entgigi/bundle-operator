@@ -2,12 +2,17 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"strings"
 
 	"github.com/entgigi/bundle-operator/api/v1alpha1"
 	"github.com/entgigi/bundle-operator/bundles"
 	"github.com/entgigi/bundle-operator/utility"
+	"github.com/go-logr/logr"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/sigstore/cosign/v2/cmd/cosign/cli/verify"
+	ociremote "github.com/sigstore/cosign/v2/pkg/oci/remote"
 )
 
 type BundleService struct {
@@ -17,9 +22,35 @@ func NewBundleService() *BundleService {
 	return &BundleService{}
 }
 
-func (bs *BundleService) CheckBundleSignature(ctx context.Context, cr *v1alpha1.EntandoBundleV2) (map[string]string, error) {
+func (bs *BundleService) CheckBundleSignature(ctx context.Context, cr *v1alpha1.EntandoBundleV2, log logr.Logger) (map[string]string, error) {
+	m := make(map[string]string, len(cr.Spec.TagList))
+	for _, tag := range cr.Spec.TagList {
+		if len(tag.SignatureInfo) <= 0 {
+			return nil, fmt.Errorf("error signature info empty")
+		}
+		verifyOk := true
+		for _, signature := range tag.SignatureInfo {
+			err := bs.verifySignature(cr.Spec.Repository+"@"+tag.Digest, signature.PubKeySecret)
+			if err != nil {
+				verifyOk = false
+				log.Error(err, "error verify signature ",
+					"tag", tag.Tag, "digest", tag.Digest, "signType", signature.Type)
+			}
 
-	return nil, nil
+		}
+		if verifyOk {
+			key := utility.TruncateString("signature-"+strings.Split(tag.Digest, ":")[1], 63)
+			m[key] = "Verified"
+		}
+		/*
+			ref, err := bs.retrieveSignatureImageRef(cr.Spec.Repository + "@" + tag.Digest)
+			if err != nil {
+				return nil, err
+			}
+			fmt.Println("ref signature: " + ref)
+		*/
+	}
+	return m, nil
 }
 
 func (bs *BundleService) GenerateBundleCode(cr *v1alpha1.EntandoBundleV2) string {
@@ -50,4 +81,44 @@ func (bs *BundleService) GetComponents(ctx context.Context, cr *v1alpha1.Entando
 
 	return bundleDescriptor.Components, dir, nil
 
+}
+
+func (bs *BundleService) retrieveSignatureImageRef(imageRef string) (string, error) {
+	ref, err := name.ParseReference(imageRef)
+	if err != nil {
+		return "", err
+	}
+
+	ociremoteOpts := []ociremote.Option{}
+	tag, err := ociremote.SignatureTag(ref, ociremoteOpts...)
+	if err != nil {
+		return "", err
+	}
+
+	return tag.Name(), nil
+}
+
+func (bs *BundleService) verifySignature(imageRef string, key string) error {
+	/*
+		o := &options.VerifyOptions{}
+
+		annotations, err := o.AnnotationsMap()
+		if err != nil {
+			return err
+		}
+
+		hashAlgorithm, err := o.SignatureDigest.HashAlgorithm()
+		if err != nil {
+			return err
+		}
+	*/
+
+	v := verify.VerifyCommand{
+		KeyRef:         key,
+		SkipTlogVerify: true,
+	}
+
+	err := v.Exec(context.TODO(), []string{imageRef})
+
+	return err
 }

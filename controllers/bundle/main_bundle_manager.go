@@ -48,7 +48,7 @@ func (r *ReconcileBundleManager) MainReconcile(ctx context.Context, req ctrl.Req
 	}
 
 	// verify signature
-	if err := r.verifyBundleSignatures(bundleService); err != nil {
+	if err := r.verifyBundleSignatures(ctx, cr, bundleService); err != nil {
 		log.Info("error verifyBundleSignatures reschedule reconcile", "error", err)
 		r.Condition.SetConditionBundleReadyFalse(ctx, cr)
 		return ctrl.Result{}, err
@@ -74,7 +74,20 @@ func (r *ReconcileBundleManager) generateAndSaveBundleCode(ctx context.Context,
 	return err
 }
 
-func (r *ReconcileBundleManager) verifyBundleSignatures(bundleService *services.BundleService) error {
-
+func (r *ReconcileBundleManager) verifyBundleSignatures(ctx context.Context,
+	cr *v1alpha1.EntandoBundleV2,
+	bundleService *services.BundleService) error {
+	verifiedList, err := bundleService.CheckBundleSignature(ctx, cr, r.Base.Log)
+	if err == nil {
+		annotations := cr.GetAnnotations()
+		for k, v := range verifiedList {
+			annotations[k] = v
+		}
+		cr.SetAnnotations(annotations)
+		errSave := r.Base.Client.Update(ctx, cr)
+		if errSave != nil {
+			r.Base.Log.Error(errSave, "error saving verified sign")
+		}
+	}
 	return nil
 }
