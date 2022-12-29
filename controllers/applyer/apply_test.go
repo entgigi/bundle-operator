@@ -56,7 +56,7 @@ func TestApplayer(t *testing.T) {
 		panic(err.Error())
 	}
 
-	yfile, err := ioutil.ReadFile("../../config/bundle-spec/manifests/db-services.yaml")
+	yfile, err := ioutil.ReadFile("../../test/db-service.yaml")
 	if err != nil {
 		t.Fatal(err.Error())
 	}

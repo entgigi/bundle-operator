@@ -82,8 +82,11 @@ func (r *EntandoBundleV2Reconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, err
 	}
 
+	recoBundleManager := NewReconcileBundleManager(r.Base.Client, r.Base.Log, r.Scheme, r.Recorder)
+	res, err := recoBundleManager.MainReconcile(ctx, req, cr)
+
 	log.Info("Reconciled EntandoBundleV2 custom resources")
-	return ctrl.Result{}, nil
+	return res, err
 }
 
 // SetupWithManager sets up the controller with the Manager.

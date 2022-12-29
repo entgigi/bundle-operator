@@ -51,8 +51,20 @@ spec:
                   properties:
                     digest:
                       type: string
-                    signature:
-                      type: string
+                    signatureInfo:
+                      items:
+                        properties:
+                          pubKey:
+                            description: Image        string        `json:"image,omitempty"`
+                            type: string
+                          pubKeySecret:
+                            type: string
+                          type:
+                            description: SignatureType identifies the type of key
+                              to use to verify signature
+                            type: string
+                        type: object
+                      type: array
                     tag:
                       type: string
                   type: object
