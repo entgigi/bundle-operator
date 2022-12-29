@@ -2,11 +2,13 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/entgigi/bundle-operator/api/v1alpha1"
 	"github.com/entgigi/bundle-operator/common"
 	"github.com/entgigi/bundle-operator/utility"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -36,6 +38,10 @@ const (
 	CONDITION_INSTANCE_CR_READY        = "InstanceCrReady"
 	CONDITION_INSTANCE_CR_READY_REASON = "InstanceCrIsReady"
 	CONDITION_INSTANCE_CR_READY_MSG    = "Your instance cr is ready"
+
+	CONDITION_BUNDLE_READY        = "BundleReady"
+	CONDITION_BUNDLE_READY_REASON = "BundleIsReady"
+	CONDITION_BUNDLE_READY_MSG    = "Your Bundle is ready"
 )
 
 type ConditionService struct {
@@ -162,6 +168,29 @@ func (cs *ConditionService) setConditionInstanceReady(ctx context.Context, cr *v
 		cr.Generation)
 }
 
+func (cs *ConditionService) SetConditionBundleReadyTrue(ctx context.Context, cr *v1alpha1.EntandoBundleV2) error {
+	return cs.setConditionBundleReady(ctx, cr, metav1.ConditionTrue)
+}
+
+func (cs *ConditionService) SetConditionBundleReadyUnknow(ctx context.Context, cr *v1alpha1.EntandoBundleV2) error {
+	return cs.setConditionBundleReady(ctx, cr, metav1.ConditionUnknown)
+}
+
+func (cs *ConditionService) SetConditionBundleReadyFalse(ctx context.Context, cr *v1alpha1.EntandoBundleV2) error {
+	return cs.setConditionBundleReady(ctx, cr, metav1.ConditionFalse)
+}
+
+func (cs *ConditionService) setConditionBundleReady(ctx context.Context, cr *v1alpha1.EntandoBundleV2, status metav1.ConditionStatus) error {
+
+	cs.deleteCondition(ctx, cr, CONDITION_BUNDLE_READY)
+	return utility.AppendCondition(ctx, cs.Base.Client, cr,
+		CONDITION_BUNDLE_READY,
+		status,
+		CONDITION_BUNDLE_READY_REASON,
+		CONDITION_BUNDLE_READY_MSG,
+		cr.Generation)
+}
+
 func (cs *ConditionService) getConditionStatus(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2, typeName string) (metav1.ConditionStatus, int64) {
 
 	var output metav1.ConditionStatus = metav1.ConditionUnknown
@@ -176,20 +205,28 @@ func (cs *ConditionService) getConditionStatus(ctx context.Context, cr *v1alpha1
 	return output, observedGeneration
 }
 
-func (cs *ConditionService) deleteCondition(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2, typeName string) error {
+func (cs *ConditionService) deleteCondition(ctx context.Context, cr client.Object, typeName string) error {
 
 	log := log.FromContext(ctx)
 	var newConditions = make([]metav1.Condition, 0)
-	for _, condition := range cr.Status.Conditions {
-		if condition.Type != typeName {
-			newConditions = append(newConditions, condition)
+	conditionsAware, conversionSuccessful := (cr).(utility.ConditionsAware)
+	if conversionSuccessful {
+		for _, condition := range conditionsAware.GetConditions() {
+			if condition.Type != typeName {
+				newConditions = append(newConditions, condition)
+			}
 		}
-	}
-	cr.Status.Conditions = newConditions
+		conditionsAware.SetConditions(newConditions)
 
-	err := cs.Base.Client.Status().Update(ctx, cr)
-	if err != nil {
-		log.Info("Application resource status update failed.")
+		err := cs.Base.Client.Status().Update(ctx, cr)
+		if err != nil {
+			log.Info("Application resource status update failed.")
+		}
+		return nil
+
+	} else {
+		errMessage := "Status cannot be deleted, resource doesn't support conditions"
+		log.Info(errMessage)
+		return fmt.Errorf(errMessage)
 	}
-	return nil
 }

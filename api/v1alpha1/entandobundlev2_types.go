@@ -20,10 +20,28 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// SignatureType identifies the type of key to use to verify signature
+// +enum
+type SignatureType string
+
+const (
+	// SignatureKeyPair means that the signature will use a priv/pub key pair
+	SignatureKeyPair SignatureType = "KEY_PAIR"
+	// SignatureKeyPair means that the signature will use the Fulcio OIDC flow
+	SignatureKeyLess SignatureType = "KEY_LESS"
+)
+
+type SignatureInfo struct {
+	Type SignatureType `json:"type,omitempty"`
+	//Image        string        `json:"image,omitempty"`
+	PubKey       string `json:"pubKey,omitempty"`
+	PubKeySecret string `json:"pubKeySecret,omitempty"`
+}
+
 type EntandoBundleTag struct {
-	Tag       string `json:"tag,omitempty"`
-	Digest    string `json:"digest,omitempty"`
-	Signature string `json:"signature,omitempty"`
+	Tag           string          `json:"tag,omitempty"`
+	Digest        string          `json:"digest,omitempty"`
+	SignatureInfo []SignatureInfo `json:"signatureInfo,omitempty"`
 }
 
 // EntandoBundleV2Spec defines the desired state of EntandoBundleV2

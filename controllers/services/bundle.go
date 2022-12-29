@@ -3,9 +3,11 @@ package services
 import (
 	"context"
 	"io/ioutil"
+	"strings"
 
 	"github.com/entgigi/bundle-operator/api/v1alpha1"
 	"github.com/entgigi/bundle-operator/bundles"
+	"github.com/entgigi/bundle-operator/utility"
 )
 
 type BundleService struct {
@@ -15,9 +17,14 @@ func NewBundleService() *BundleService {
 	return &BundleService{}
 }
 
-func (bs *BundleService) CheckBundleSignature(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) error {
+func (bs *BundleService) CheckBundleSignature(ctx context.Context, cr *v1alpha1.EntandoBundleV2) (map[string]string, error) {
 
-	return nil
+	return nil, nil
+}
+
+func (bs *BundleService) GenerateBundleCode(cr *v1alpha1.EntandoBundleV2) string {
+	s := utility.GenerateSha256(cr.Spec.Repository)
+	return "bundle-" + strings.ToLower(utility.TruncateString(s, 8))
 }
 
 func (bs *BundleService) GetComponents(ctx context.Context, cr *v1alpha1.EntandoBundleInstanceV2) ([]bundles.Component, string, error) {
