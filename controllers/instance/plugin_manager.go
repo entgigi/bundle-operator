@@ -2,7 +2,6 @@ package instance
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -96,16 +95,19 @@ func (d *PluginManager) isCrUpgrade(ctx context.Context, cr *v1alpha1.EntandoBun
 	return err, true
 }
 
-func (d *PluginManager) GenPluginId(plugin *bundles.Plugin) string {
-	pluginFullRepo := plugin.Repository + "@" + plugin.Digest
-	s := utility.GenerateSha256(pluginFullRepo)
+func (d *PluginManager) GenPluginId(instanceCode string, plugin *bundles.Plugin) string {
+	pluginFullInfo := plugin.Repository + "@" + plugin.Digest + "-" + instanceCode
+	s := utility.GenerateSha256(pluginFullInfo)
 	return utility.TruncateString(s, 8)
 }
 
 func (d *PluginManager) GenPluginCode(cr *v1alpha1.EntandoBundleInstanceV2, plugin *bundles.Plugin) string {
-	pluginId := d.GenPluginId(plugin)
-	pluginCode := strings.ToLower(utility.TruncateString("pn-"+pluginId+"-"+cr.Name, 220))
-	fmt.Println("pluginCode: " + pluginCode)
+	splittedName := strings.Split(cr.ObjectMeta.Name, "-")
+	instanceCode := splittedName[2]
+	bundleName := splittedName[0] + "-" + splittedName[1]
+	pluginId := d.GenPluginId(instanceCode, plugin)
+	pluginCode := strings.ToLower(bundleName + "-pn-" + pluginId + "-" + utility.TruncateString(cr.Name, 180))
+	d.Base.Log.Info("generated pluginCode", "pluginCode", pluginCode)
 	return pluginCode
 }
 
